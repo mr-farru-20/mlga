@@ -1,0 +1,38 @@
+ pop art 
+from google.colab import files 
+uploaded = files.upload() 
+image_path = next(iter(uploaded)) 
+ 
+import cv2 
+import numpy as np 
+import matplotlib.pyplot as plt 
+ 
+img = cv2.imread(image_path) 
+img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) 
+img = cv2.resize(img, (400, 400)) 
+ 
+# Posterize: reduce color levels 
+def posterize(img, levels=4): 
+   factor = 255 // (levels - 1) 
+   return (img // factor) * factor 
+ 
+posterized = posterize(img, levels=6) 
+ 
+# Boost saturation 
+hsv = cv2.cvtColor(posterized, cv2.COLOR_RGB2HSV) 
+hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.8, 0, 255) 
+colored = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB) 
+ 
+# Apply a vivid colormap to a grayscale version 
+gray = cv2.cvtColor(colored, cv2.COLOR_RGB2GRAY) 
+colormap = cv2.applyColorMap(gray, cv2.COLORMAP_TURBO) 
+ 
+# Blend original poster with colored map 
+pop_art = cv2.addWeighted(colored, 0.6, colormap, 0.4, 0) 
+ 
+# Pop art image 
+plt.figure(figsize=(8, 8)) 
+plt.axis('off') 
+plt.imshow(pop_art) 
+plt.title("Pop Art Effect") 
+plt.show() 

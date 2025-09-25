@@ -1,0 +1,21 @@
+import torch 
+from diffusers import StableDiffusionPipeline 
+from google.colab import files 
+ 
+model_id = "runwayml/stable-diffusion-v1-5" 
+pipe = StableDiffusionPipeline.from_pretrained(model_id, 
+torch_dtype=torch.float16) 
+pipe = pipe.to("cuda") 
+ 
+print("Upload your style/subject image:") 
+uploaded = files.upload() 
+ 
+image_name = list(uploaded.keys())[0] 
+subject_name = image_name.split(".")[0] 
+ 
+prompt = f"A portrait of {subject_name} in oil painting style, ultra 
+detailed" 
+image = pipe(prompt, guidance_scale=8.0).images[0] 
+ 
+image.save("fine_tuned_output.png") 
+image.show() 

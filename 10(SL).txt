@@ -1,0 +1,75 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+import seaborn as sns 
+from sklearn.model_selection import train_test_split 
+from sklearn.preprocessing import StandardScaler 
+from sklearn.metrics import accuracy_score, confusion_matrix, 
+classification_report 
+from sklearn.ensemble import RandomForestClassifier 
+ 
+np.random.seed(42) 
+ 
+n_samples = 200 
+ 
+# Impressionist: softer colors, medium complexity, denser strokes 
+impressionist = np.column_stack(( 
+   np.random.normal(loc=60, scale=8, size=n_samples),   # color intensity 
+   np.random.normal(loc=30, scale=5, size=n_samples),   # shape complexity 
+   np.random.normal(loc=70, scale=6, size=n_samples)    # brushstroke 
+density 
+)) 
+ 
+# Abstract: brighter colors, higher complexity, fewer strokes 
+abstract = np.column_stack(( 
+   np.random.normal(loc=80, scale=6, size=n_samples),   # color intensity 
+   np.random.normal(loc=60, scale=7, size=n_samples),   # shape complexity 
+   np.random.normal(loc=40, scale=5, size=n_samples)    # brushstroke 
+density 
+)) 
+ 
+# Create dataset 
+X = np.vstack((impressionist, abstract)) 
+y = np.array([0]*n_samples + [1]*n_samples)  # 0 = Impressionist, 1 = 
+Abstract 
+ 
+# Convert to DataFrame for better visualization 
+df = pd.DataFrame(X, columns=["Color_intensity", "Shape_complexity", 
+"Brushstroke_density"]) 
+df['Label'] = y 
+print(df.head()) 
+ 
+# Train-test split 
+X_train, X_test, y_train, y_test = train_test_split( 
+   df[["Color_intensity", "Shape_complexity", "Brushstroke_density"]], 
+   df["Label"], 
+   test_size=0.3, 
+   random_state=42 
+) 
+ 
+# Scale features 
+scaler = StandardScaler() 
+X_train_scaled = scaler.fit_transform(X_train) 
+X_test_scaled = scaler.transform(X_test) 
+ 
+# Random Forest Classifier 
+clf = RandomForestClassifier(n_estimators=100, random_state=42) 
+clf.fit(X_train_scaled, y_train) 
+y_pred = clf.predict(X_test_scaled) 
+ 
+# Accuracy & Report 
+acc = accuracy_score(y_test, y_pred) 
+print("Accuracy:", acc) 
+print("\nClassification Report:\n", classification_report(y_test, y_pred, 
+target_names=["Impressionism","Abstract"])) 
+ 
+# Confusion Matrix 
+cm = confusion_matrix(y_test, y_pred) 
+plt.figure(figsize=(6,5)) 
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", 
+           xticklabels=["Impressionism", "Abstract"], 
+           yticklabels=["Impressionism", "Abstract"]) 
+plt.title("Confusion Matrix") 
+plt.xlabel("Predicted Label") 
+plt.ylabel("True Label") 
+plt.show()

@@ -1,0 +1,34 @@
+import numpy as np 
+import matplotlib.pyplot as plt 
+from sklearn.linear_model import LinearRegression 
+ 
+# Generate sample data with a sinusoidal pattern 
+x = np.linspace(0, 20, 100).reshape(-1, 1)  # More data points for 
+smoother curve 
+y = np.sin(x) + np.random.normal(scale=0.1, size=x.shape)  # Adding slight 
+noise for a natural effect 
+ 
+# Train a linear regression model 
+model = LinearRegression() 
+model.fit(x, y) 
+ 
+# Predict values using the model 
+x_test = np.linspace(0, 20, 300).reshape(-1, 1) 
+predictions = model.predict(x_test) 
+ 
+# Plotting the data points and the regression line 
+plt.figure(figsize=(10, 6)) 
+plt.scatter(x, y, color='blue', alpha=0.5, label='Data Points') 
+plt.plot(x_test, predictions, color='red', linestyle='--', 
+label='Regression Line') 
+ 
+# Enhance the artistic look by overlaying the sine wave 
+plt.plot(x_test, np.sin(x_test), color='green', linewidth=2, 
+label='Original Sine Wave') 
+ 
+# Add labels and title 
+plt.xlabel('X-Axis') 
+plt.ylabel('Y-Axis') 
+plt.title('Artistic Pattern with Regression') 
+plt.legend() 
+plt.show()

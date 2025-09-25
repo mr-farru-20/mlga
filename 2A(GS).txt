@@ -1,0 +1,59 @@
+mport tensorflow as tf 
+from tensorflow.keras import layers 
+import matplotlib.pyplot as plt 
+ 
+# Generator model for grayscale images 
+def make_generator_model(): 
+   model = tf.keras.Sequential([ 
+       layers.Dense(256, activation='relu', input_shape=(100,)), 
+       layers.Dense(512, activation='relu'), 
+       layers.Dense(28 * 28 * 1, activation='tanh'),  # Output for 
+grayscale 
+       layers.Reshape((28, 28, 1))  # Reshape to 28x28 with 1 channel 
+   ]) 
+   return model 
+ 
+# Create a generator and generate random grayscale image 
+generator = make_generator_model() 
+random_latent_vectors = tf.random.normal([1, 100]) 
+generated_image = generator(random_latent_vectors) 
+ 
+# Normalize image to range [0, 1] for display 
+generated_image = (generated_image[0] + 1) / 2.0 
+ 
+# Plot the generated grayscale image 
+plt.imshow(generated_image[:, :, 0], cmap='gray')  # Take the only channel 
+plt.axis('off') 
+plt.show() 
+ 
+ 
+#2b RGB Image 
+import tensorflow as tf 
+from tensorflow.keras import layers 
+import matplotlib.pyplot as plt 
+ 
+# Generator model for RGB images 
+def make_generator_model(): 
+   model = tf.keras.Sequential([ 
+       layers.Dense(256, activation='relu', input_shape=(100,)), 
+       layers.Dense(512, activation='relu'), 
+       layers.Dense(28 * 28 * 3, activation='tanh'),  # Output shape 
+adjusted for RGB 
+       layers.Reshape((28, 28, 3))  # Reshape to 28x28 with 3 color 
+channels 
+   ]) 
+   return model 
+ 
+# Create a generator and generate random images 
+generator = make_generator_model() 
+random_latent_vectors = tf.random.normal([1, 100]) 
+generated_image = generator(random_latent_vectors) 
+ 
+# Normalize image to range [0, 1] for proper display 
+generated_image = (generated_image[0] + 1) / 2.0 
+ 
+# Plot the generated colorful image 
+plt.imshow(generated_image) 
+plt.axis('off') 
+plt.title("Generated RGB Image") 
+plt.show() 
