@@ -1,91 +1,49 @@
-import torch 
-import torch.nn as nn 
-import torch.optim as optim 
-from torchvision import datasets, transforms 
-from torch.utils.data import DataLoader 
-import matplotlib.pyplot as plt 
- 
-# Data Loader (MNIST) 
-transform = transforms.Compose([ 
-   transforms.ToTensor(), 
-   transforms.Normalize([0.5], [0.5])  # scale to [-1,1] 
-]) 
- 
-batch_size = 128 
-dataset = datasets.MNIST(root="./data", train=True, download=True, 
-transform=transform) 
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True) 
- 
-# DCGAN Generator 
-class DCGAN_Generator(nn.Module): 
-   def __init__(self, latent_dim=100): 
-       super().__init__() 
-       self.model = nn.Sequential( 
-           nn.ConvTranspose2d(latent_dim, 128, 7, 1, 0, bias=False), 
-           nn.BatchNorm2d(128), 
-           nn.ReLU(True), 
-           nn.ConvTranspose2d(128, 64, 4, 2, 1, bias=False), 
-           nn.BatchNorm2d(64), 
-           nn.ReLU(True), 
-           nn.ConvTranspose2d(64, 1, 4, 2, 1, bias=False), 
-           nn.Tanh() 
-       ) 
- 
-   def forward(self, z): 
-       return self.model(z) 
- 
-# WGAN Generator (same as DCGAN for simplicity) 
-class WGAN_Generator(DCGAN_Generator): 
-   pass 
- 
-# Conditional GAN Generator 
-class CGAN_Generator(nn.Module): 
-   def __init__(self, latent_dim=100, num_classes=10): 
-       super().__init__() 
-       self.label_emb = nn.Embedding(num_classes, num_classes) 
-       self.model = nn.Sequential( 
-           nn.Linear(latent_dim + num_classes, 128), 
-           nn.ReLU(True), 
-           nn.Linear(128, 256), 
-           nn.ReLU(True), 
-           nn.Linear(256, 784), 
-           nn.Tanh() 
-       ) 
- 
-   def forward(self, z, labels): 
-       c = self.label_emb(labels) 
-       x = torch.cat([z, c], 1) 
-       img = self.model(x) 
-       return img.view(img.size(0), 1, 28, 28) 
- 
-# Show generated images 
-def show_images(imgs, title="Generated Images"): 
-   imgs = imgs[:25].detach().cpu() 
-   grid = torch.cat([img for img in imgs], dim=2).squeeze() 
-   plt.imshow(grid.numpy(), cmap="gray") 
-   plt.title(title) 
-   plt.axis("off") 
-   plt.show() 
- 
-# Load Pretrained Models (Optional) 
-# If you don’t have pretrained, we can just sample from untrained for 
-demo. 
- 
-latent_dim = 100 
- 
-# DCGAN Sample 
-dcgan_gen = DCGAN_Generator(latent_dim) 
-z = torch.randn(25, latent_dim, 1, 1) 
-dcgan_imgs = dcgan_gen(z) 
-show_images(dcgan_imgs, "DCGAN Outputs") 
-# WGAN Sample 
-wgan_gen = WGAN_Generator(latent_dim) 
-z = torch.randn(25, latent_dim, 1, 1) 
-wgan_imgs = wgan_gen(z) 
-show_images(wgan_imgs, "WGAN Outputs") 
-# Conditional GAN Sample 
-cgan_gen = CGAN_Generator(latent_dim) 
-z = torch.randn(25, latent_dim) 
-labels = torch.randint(0, 10, (25,)) 
-cgan_imgs = cgan_gen(z, labels) 
-show_images(cgan_imgs, "Conditional GAN Outputs") 
+import torch
+import torch.nn as nn
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+
+# Data Loader (MNIST)
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize([0.5], [0.5])  # scale to [-1, 1]
+])
+
+batch_size = 128
+dataset = datasets.MNIST(root="./data", train=True, download=True, transform=transform)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+# DCGAN Generator
+class DCGAN_Generator(nn.Module):
+    def __init__(self, latent_dim=100):
+        super().__init__()
+        self.model = nn.Sequential(
+            nn.ConvTranspose2d(latent_dim, 128, 7, 1, 0, bias=False),
+            nn.BatchNorm2d(128),
+            nn.ReLU(True),
+            nn.ConvTranspose2d(128, 64, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(64),
+            nn.ReLU(True),
+            nn.ConvTranspose2d(64, 1, 4, 2, 1, bias=False),
+            nn.Tanh()
+        )
+
+    def forward(self, z):
+        return self.model(z)
+
+# Show generated images
+def show_images(imgs, title="Generated Images"):
+    imgs = imgs[:25].detach().cpu()
+    grid = torch.cat([img for img in imgs], dim=2).squeeze()
+    plt.imshow(grid.numpy(), cmap="gray")
+    plt.title(title)
+    plt.axis("off")
+    plt.show()
+
+# Instantiate and generate samples
+latent_dim = 100
+dcgan_gen = DCGAN_Generator(latent_dim)
+z = torch.randn(25, latent_dim, 1, 1)
+dcgan_imgs = dcgan_gen(z)
+show_images(dcgan_imgs, "DCGAN Outputs")
