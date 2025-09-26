@@ -1,83 +1,84 @@
-import numpy as np 
-import tensorflow as tf 
-from tensorflow.keras import layers, Model 
-from tensorflow.keras.datasets import mnist 
-import matplotlib.pyplot as plt 
- 
-# --- Load and preprocess data --- 
-(x_train, _), (x_test, _) = mnist.load_data() 
-x_train = x_train.astype("float32") / 255.0 
-x_train = np.expand_dims(x_train, -1)  # shape: (60000, 28, 28, 1) 
- 
-latent_dim = 2  # Size of latent space 
- 
-# --- Encoder --- 
-encoder_inputs = layers.Input(shape=(28, 28, 1)) 
-x = layers.Flatten()(encoder_inputs) 
-x = layers.Dense(128, activation="relu")(x) 
-z_mean = layers.Dense(latent_dim, name="z_mean")(x) 
-z_log_var = layers.Dense(latent_dim, name="z_log_var")(x) 
- 
-def sampling(args): 
-   z_mean, z_log_var = args 
-   epsilon = tf.random.normal(shape=tf.shape(z_mean)) 
-   return z_mean + tf.exp(0.5 * z_log_var) * epsilon 
- 
-z = layers.Lambda(sampling)([z_mean, z_log_var]) 
-encoder = Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder") 
- 
-# --- Decoder --- 
-latent_inputs = layers.Input(shape=(latent_dim,)) 
-x = layers.Dense(128, activation="relu")(latent_inputs) 
-x = layers.Dense(28 * 28, activation="sigmoid")(x) 
-decoder_outputs = layers.Reshape((28, 28, 1))(x) 
-decoder = Model(latent_inputs, decoder_outputs, name="decoder") 
- 
-# --- VAE Model --- 
-class VAE(Model): 
-   def __init__(self, encoder, decoder, **kwargs): 
-       super(VAE, self).__init__(**kwargs) 
-       self.encoder = encoder 
-       self.decoder = decoder 
- 
-   def train_step(self, data): 
-       if isinstance(data, tuple): 
-           data = data[0] 
-       with tf.GradientTape() as tape: 
-           z_mean, z_log_var, z = self.encoder(data) 
-           reconstruction = self.decoder(z) 
-           reconstruction_loss = tf.reduce_mean( 
-               tf.keras.losses.binary_crossentropy(data, reconstruction) 
-           ) 
-           reconstruction_loss *= 28 * 28 
-           kl_loss = 1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var) 
-           kl_loss = tf.reduce_mean(kl_loss) * -0.5 
-           total_loss = reconstruction_loss + kl_loss 
-       grads = tape.gradient(total_loss, self.trainable_weights) 
-       self.optimizer.apply_gradients(zip(grads, self.trainable_weights)) 
-       return {"loss": total_loss, "reconstruction_loss": 
-reconstruction_loss, "kl_loss": kl_loss} 
- 
-# --- Compile & Train --- 
-vae = VAE(encoder, decoder) 
-vae.compile(optimizer="adam") 
-vae.fit(x_train, x_train, epochs=10, batch_size=128) 
- 
-# --- Generate new digits: only z rows --- 
-def plot_latent_space(decoder, rows=2, cols=10): 
-   grid_x = np.linspace(-2, 2, cols) 
-   grid_y = np.linspace(-2, 2, rows) 
-   figure = np.zeros((28 * rows, 28 * cols)) 
-   for i, yi in enumerate(grid_y): 
-       for j, xi in enumerate(grid_x): 
-           z_sample = np.array([[xi, yi]]) 
-           decoded = decoder.predict(z_sample, verbose=0) 
-           digit = decoded[0].reshape(28, 28) 
-           figure[i * 28: (i + 1) * 28, 
-                  j * 28: (j + 1) * 28] = digit 
-   plt.figure(figsize=(cols, rows)) 
-   plt.axis("off") 
-plt.imshow(figure, cmap="gray") 
-plt.show() 
-# Call with 2 rows and 10 columns 
-plot_latent_space(decoder, rows=2, cols=10) 
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras import layers, Model
+from tensorflow.keras.datasets import mnist
+import matplotlib.pyplot as plt
+
+# --- Load and preprocess data ---
+(x_train, _), (x_test, _) = mnist.load_data()
+x_train = x_train.astype("float32") / 255.0
+x_train = np.expand_dims(x_train, -1)  # shape: (60000, 28, 28, 1)
+
+latent_dim = 2  # Size of latent space
+
+# --- Encoder ---
+encoder_inputs = layers.Input(shape=(28, 28, 1))
+x = layers.Flatten()(encoder_inputs)
+x = layers.Dense(128, activation="relu")(x)
+z_mean = layers.Dense(latent_dim, name="z_mean")(x)
+z_log_var = layers.Dense(latent_dim, name="z_log_var")(x)
+
+def sampling(args):
+   z_mean, z_log_var = args
+   epsilon = tf.random.normal(shape=tf.shape(z_mean))
+   return z_mean + tf.exp(0.5 * z_log_var) * epsilon
+
+z = layers.Lambda(sampling)([z_mean, z_log_var])
+encoder = Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
+
+# --- Decoder ---
+latent_inputs = layers.Input(shape=(latent_dim,))
+x = layers.Dense(128, activation="relu")(latent_inputs)
+x = layers.Dense(28 * 28, activation="sigmoid")(x)
+decoder_outputs = layers.Reshape((28, 28, 1))(x)
+decoder = Model(latent_inputs, decoder_outputs, name="decoder")
+
+# --- VAE Model ---
+class VAE(Model):
+   def __init__(self, encoder, decoder, **kwargs):
+       super(VAE, self).__init__(**kwargs)
+       self.encoder = encoder
+       self.decoder = decoder
+
+   def train_step(self, data):
+       if isinstance(data, tuple):
+           data = data[0]
+       with tf.GradientTape() as tape:
+           z_mean, z_log_var, z = self.encoder(data)
+           reconstruction = self.decoder(z)
+           reconstruction_loss = tf.reduce_mean(
+               tf.keras.losses.binary_crossentropy(data, reconstruction)
+           )
+           reconstruction_loss *= 28 * 28
+           kl_loss = 1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var)
+           kl_loss = tf.reduce_mean(kl_loss) * -0.5
+           total_loss = reconstruction_loss + kl_loss
+       grads = tape.gradient(total_loss, self.trainable_weights)
+       self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
+       return {"loss": total_loss, "reconstruction_loss":
+reconstruction_loss, "kl_loss": kl_loss}
+
+# --- Compile & Train ---
+vae = VAE(encoder, decoder)
+vae.compile(optimizer="adam")
+vae.fit(x_train, x_train, epochs=10, batch_size=128)
+
+# --- Generate new digits: only z rows ---
+def plot_latent_space(decoder, rows=2, cols=10):
+   grid_x = np.linspace(-2, 2, cols)
+   grid_y = np.linspace(-2, 2, rows)
+   figure = np.zeros((28 * rows, 28 * cols))
+   for i, yi in enumerate(grid_y):
+       for j, xi in enumerate(grid_x):
+           z_sample = np.array([[xi, yi]])
+           decoded = decoder.predict(z_sample, verbose=0)
+           digit = decoded[0].reshape(28, 28)
+           figure[i * 28: (i + 1) * 28,
+                  j * 28: (j + 1) * 28] = digit
+   plt.figure(figsize=(cols, rows))
+   plt.axis("off")
+   plt.imshow(figure, cmap="gray")
+   plt.show()
+
+# Call with 2 rows and 10 columns
+plot_latent_space(decoder, rows=2, cols=10)
